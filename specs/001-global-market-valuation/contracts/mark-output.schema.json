@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MarkMessage",
+  "description": "Published for every live_mark and valuation_mark change, and at least every 60 s per instrument so that age stays visible.",
+  "type": "object",
+  "required": ["instrument_id", "kind", "price", "source", "session_state", "quality_state", "is_stale", "age_s", "as_of"],
+  "properties": {
+    "instrument_id": { "type": "string" },
+    "kind": { "enum": ["LIVE", "VALUATION"] },
+    "price": { "type": ["number", "null"] },
+    "currency": { "type": "string" },
+    "fx_rate": { "type": ["number", "null"] },
+    "source": {
+      "enum": ["TRADE", "MID", "OFFICIAL_CLOSE", "CLOSING_AUCTION", "SETTLEMENT", "REFERENCE_FALLBACK", "CARRIED_FORWARD", "PRICING_SOURCE", "MANUAL_PROMOTE"]
+    },
+    "source_detail": { "type": "string", "description": "Venue, pricing source or registry field" },
+    "session_state": { "enum": ["CONTINUOUS", "AUCTION", "HALTED", "CLOSED", "EXTENDED", "UNKNOWN"] },
+    "quality_state": {
+      "enum": ["OK", "FROZEN_CLOSE", "STALE", "HALTED", "QUARANTINED", "QUARANTINE_TIMEOUT", "FEED_DEGRADED", "CALENDAR_FEED_CONFLICT"]
+    },
+    "is_stale": { "type": "boolean" },
+    "age_s": { "type": "number", "minimum": 0 },
+    "close_revision": { "type": ["integer", "null"] },
+    "close_final": { "type": ["boolean", "null"] },
+    "book_policy": { "enum": ["FLASH_INTRADAY", "OFFICIAL_EOD", null] },
+    "as_of": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
