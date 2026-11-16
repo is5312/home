@@ -1,0 +1,65 @@
+# Contract: venue rule file (config/venues/<MIC>.yaml)
+# Every rule is dated, eligibility-keyed, in venue-local time, and cites a source.
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: VenueRuleFile
+type: object
+required: [mic, iana_tz, calendar_code, late_window_min, bootstrap_local_time, rules]
+properties:
+  mic: { type: string, pattern: "^[A-Z0-9]{4}$" }
+  iana_tz: { type: string }                 # validated against zoneinfo at load
+  calendar_code: { type: string }
+  late_window_min: { type: integer, minimum: 0 }
+  bootstrap_local_time: { type: string, pattern: "^[0-2][0-9]:[0-5][0-9]$" }
+  feed_conflict_policy: { enum: [HOLD_AND_ALERT, TRUST_FEED_AND_ALERT, TRUST_CALENDAR_AND_ALERT], default: HOLD_AND_ALERT }
+  rules:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [eligibility, effective_from, phases, source]
+      properties:
+        eligibility: { type: object, additionalProperties: { type: [string, boolean] } }
+        effective_from: { type: string, format: date }
+        effective_to: { type: [string, "null"], format: date }   # exclusive
+        source: { type: string, format: uri }
+        phases:
+          type: array
+          items:
+            type: object
+            required: [name, start, end, live_marking]
+            properties:
+              name: { enum: [PRE_OPEN, OPENING_AUCTION, CONTINUOUS, LUNCH, CLOSING_AUCTION, CLOSING_CALL, POST_CLOSE, AFTER_MARKET, CLOSED] }
+              start: { type: string, pattern: "^[0-2][0-9]:[0-5][0-9](:[0-5][0-9])?$" }
+              end: { type: string, pattern: "^[0-2][0-9]:[0-5][0-9](:[0-5][0-9])?$" }
+              live_marking: { type: boolean }
+              random_end_s: { type: integer, minimum: 0 }
+# Load-time checks (not expressible in JSON Schema):
+# - no two rules with equal eligibility have overlapping [effective_from, effective_to)
+# - phases are ordered and do not overlap
+# Example (config/venues/XNSE.yaml):
+# mic: XNSE
+# iana_tz: Asia/Kolkata
+# calendar_code: "<from FLDS>"
+# late_window_min: 20
+# bootstrap_local_time: "07:00"
+# rules:
+#   - eligibility: { fo_eligible: true }
+#     effective_from: 2026-08-03
+#     effective_to: 2026-12-07
+#     source: https://www.outlookbusiness.com/markets/sebi-closing-auction-session-new-stock-market-timings-from-august-3
+#     phases:
+#       - { name: CONTINUOUS, start: "09:15", end: "15:15", live_marking: true }
+#       - { name: CLOSING_AUCTION, start: "15:15", end: "15:35", live_marking: false }
+#   - eligibility: { fo_eligible: true }
+#     effective_from: 2026-12-07
+#     source: https://www.kotakneo.com/news/regulations/nse-new-closing-auction-and-f-and-o-trading-rules-from-7-december/
+#     phases:
+#       - { name: CONTINUOUS, start: "09:15", end: "15:30", live_marking: true }
+#       - { name: CLOSING_AUCTION, start: "15:30", end: "15:40", live_marking: false, random_end_s: 120 }
+#       - { name: CLOSED, start: "15:40", end: "15:50", live_marking: false }   # matching and confirmation to 15:45
+#       - { name: POST_CLOSE, start: "15:50", end: "16:00", live_marking: false }
+#   - eligibility: { fo_eligible: false }
+#     effective_from: 2026-08-03
+#     source: https://www.outlookbusiness.com/markets/sebi-closing-auction-session-new-stock-market-timings-from-august-3
+#     phases:
+#       - { name: CONTINUOUS, start: "09:15", end: "15:30", live_marking: true }

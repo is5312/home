@@ -1,0 +1,42 @@
+# Contract: field registry (config/field_registry.yaml)
+# The service refuses to start if production config references an entry whose status is not VERIFIED.
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: FieldRegistry
+type: object
+required: [fields]
+properties:
+  fields:
+    type: array
+    items:
+      type: object
+      required: [mnemonic, service, status, evidence]
+      properties:
+        mnemonic: { type: string, pattern: "^[A-Za-z0-9_]+$" }
+        service: { enum: [refdata, mktdata, tick] }
+        status: { enum: [VERIFIED, NAME_FOUND, NOT_FOUND, OTHER_VENDOR] }
+        field_id: { type: string }
+        meaning: { type: string }
+        evidence: { type: array, items: { type: string } }
+        replaces: { type: string }
+        evidence_matrix:          # required when status == VERIFIED
+          type: object
+          required: [field_id, service_support, security_coverage, entitlement_checked, enum_map, datetime_semantics, null_behaviour]
+          properties:
+            field_id: { type: string }
+            service_support: { type: string }
+            security_coverage: { type: array, items: { type: string } }
+            entitlement_checked: { type: string, format: date }
+            enum_map: { type: [string, "null"] }   # path under config/enum_maps/
+            datetime_semantics: { type: string }
+            null_behaviour: { type: string }
+# Example:
+# fields:
+#   - mnemonic: EVT_TRADE_IDENTIFIER_RT
+#     service: mktdata
+#     status: NAME_FOUND
+#     replaces: EVT_TRADE_ID_RT
+#     evidence: ["https://github.com/matthewgilbert/blp/blob/master/doc/source/quickstart.ipynb"]
+#   - mnemonic: MKT_STATUS_IND
+#     service: mktdata
+#     status: OTHER_VENDOR
+#     evidence: ["Refinitiv Real-Time SDK"]
